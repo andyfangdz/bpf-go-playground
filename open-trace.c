@@ -1,6 +1,6 @@
 
-#include <linux/kconfig.h>
 #include <linux/bpf.h>
+#include <linux/kconfig.h>
 
 #include <uapi/linux/ptrace.h>
 
@@ -11,29 +11,28 @@
 
 #define PT_REGS_PARM1(x) ((x)->di)
 
-static int (*bpf_probe_read)(void *dst, int size, void *unsafe_ptr) =
-        (void *) BPF_FUNC_probe_read;
-static int (*bpf_trace_printk)(const char *fmt, int fmt_size, ...) =
-        (void *) BPF_FUNC_trace_printk;
+static int (*bpf_probe_read)(void *dst, int size,
+                             void *unsafe_ptr) = (void *)BPF_FUNC_probe_read;
+static int (*bpf_trace_printk)(const char *fmt, int fmt_size,
+                               ...) = (void *)BPF_FUNC_trace_printk;
 
-#define printt(fmt, ...)                                                   \
-        ({                                                                 \
-                char ____fmt[] = fmt;                                      \
-                bpf_trace_printk(____fmt, sizeof(____fmt), ##__VA_ARGS__); \
-        })
+#define printt(fmt, ...)                                                       \
+  ({                                                                           \
+    char ____fmt[] = fmt;                                                      \
+    bpf_trace_printk(____fmt, sizeof(____fmt), ##__VA_ARGS__);                 \
+  })
 
 // the kprobe
 
 SEC("kprobe/SyS_open")
-int kprobe__sys_open(struct pt_regs *ctx)
-{
-        char filename[256];
+int kprobe__sys_open(struct pt_regs *ctx) {
+  char filename[256];
 
-        bpf_probe_read(filename, sizeof(filename), (void *)PT_REGS_PARM1(ctx));
+  bpf_probe_read(filename, sizeof(filename), (void *)PT_REGS_PARM1(ctx));
 
-        printt("open(%s)\n", filename);
+  printt("open(%s)\n", filename);
 
-        return 0;
+  return 0;
 }
 
 char _license[] SEC("license") = "GPL";
